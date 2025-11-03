@@ -7,6 +7,7 @@ class FloatingControlsWidget extends StatelessWidget {
   final VoidCallback? onCustomizationTap;
   final VoidCallback? onResetAvatar;
   final VoidCallback? onSettingsTap;
+  final VoidCallback? onSwitchCamera;
   final bool isPersonDetected;
 
   const FloatingControlsWidget({
@@ -14,6 +15,7 @@ class FloatingControlsWidget extends StatelessWidget {
     this.onCustomizationTap,
     this.onResetAvatar,
     this.onSettingsTap,
+    this.onSwitchCamera,
     required this.isPersonDetected,
   }) : super(key: key);
 
@@ -42,6 +44,34 @@ class FloatingControlsWidget extends StatelessWidget {
                 child: CustomIconWidget(
                   iconName: 'settings',
                   color: AppTheme.textPrimary,
+                  size: 6.w,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Camera switch button (top-right)
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 1.h,
+          right: 4.w,
+          child: GestureDetector(
+            onTap: onSwitchCamera,
+            child: Container(
+              width: 12.w,
+              height: 12.w,
+              decoration: BoxDecoration(
+                color: AppTheme.overlayTransparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppTheme.accentCyan.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: CustomIconWidget(
+                  iconName: 'flip_camera_android',
+                  color: AppTheme.accentCyan,
                   size: 6.w,
                 ),
               ),

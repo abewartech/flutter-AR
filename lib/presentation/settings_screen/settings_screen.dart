@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
@@ -20,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _detectionSensitivity = 1.0;
   int _autoSwitchTimer = 15;
   bool _isRearCamera = true;
+  bool _initialIsRearCamera = true;
 
   // Avatar Preferences State
   int _selectedSkinTone = 1;
@@ -32,6 +34,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // App Settings State
   String _selectedLanguage = 'id';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialValues();
+  }
+
+  void _loadInitialValues() {
+    // Get camera preference from navigation arguments
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map<String, dynamic>) {
+      setState(() {
+        _isRearCamera = args['isRearCamera'] as bool? ?? true;
+        _initialIsRearCamera = _isRearCamera;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +77,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setState(() => _autoSwitchTimer = value);
                   _provideFeedback();
                 },
-                onCameraToggled: (value) {
+                onCameraToggled: (value) async {
                   setState(() => _isRearCamera = value);
                   _provideFeedback();
+                  // Save to SharedPreferences
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('isRearCamera', value);
                 },
               ),
               AvatarPreferencesSection(
@@ -123,7 +145,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       leading: GestureDetector(
         onTap: () {
           _provideFeedback();
-          Navigator.of(context).pop();
+          // Return camera preference if changed
+          if (_isRearCamera != _initialIsRearCamera) {
+            Navigator.of(context).pop({'isRearCamera': _isRearCamera});
+          } else {
+            Navigator.of(context).pop();
+          }
         },
         child: Container(
           margin: EdgeInsets.all(2.w),

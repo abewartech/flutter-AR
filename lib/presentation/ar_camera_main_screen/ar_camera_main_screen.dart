@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
@@ -26,6 +27,7 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
   List<CameraDescription> _cameras = [];
   bool _isCameraInitialized = false;
   bool _isPermissionGranted = false;
+  bool _isRearCamera = true; // Track current camera
 
   // AR and detection related
   bool _isPersonDetected = false;
@@ -63,7 +65,8 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
       curve: Curves.easeInOut,
     ));
 
-    // Initialize camera and detection
+    // Load camera preference and initialize
+    _loadCameraPreference();
     _initializeApp();
 
     // Mock person detection stream
@@ -121,6 +124,20 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
     } else if (state == AppLifecycleState.resumed) {
       _initializeCamera();
     }
+  }
+
+  Future<void> _loadCameraPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _isRearCamera = prefs.getBool('isRearCamera') ?? true;
+      });
+    }
+  }
+
+  Future<void> _saveCameraPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isRearCamera', _isRearCamera);
   }
 
   Future<void> _initializeApp() async {
@@ -194,15 +211,24 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
       _cameras = await availableCameras();
       if (_cameras.isEmpty) return;
 
-      final camera = kIsWeb
-          ? _cameras.firstWhere(
-              (c) => c.lensDirection == CameraLensDirection.front,
-              orElse: () => _cameras.first,
-            )
-          : _cameras.firstWhere(
-              (c) => c.lensDirection == CameraLensDirection.back,
-              orElse: () => _cameras.first,
-            );
+      // Select camera based on preference
+      CameraDescription camera;
+      if (kIsWeb) {
+        // Web always uses front camera
+        camera = _cameras.firstWhere(
+          (c) => c.lensDirection == CameraLensDirection.front,
+          orElse: () => _cameras.first,
+        );
+      } else {
+        // Mobile: use preference
+        final desiredDirection = _isRearCamera 
+            ? CameraLensDirection.back 
+            : CameraLensDirection.front;
+        camera = _cameras.firstWhere(
+          (c) => c.lensDirection == desiredDirection,
+          orElse: () => _cameras.first,
+        );
+      }
 
       _cameraController = CameraController(
         camera,
@@ -295,8 +321,63 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
     HapticFeedback.selectionClick();
   }
 
-  void _navigateToSettings() {
-    Navigator.pushNamed(context, '/settings-screen');
+  Future<void> _switchCamera() async {
+    if (kIsWeb) {
+      // Camera switching not supported on web
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pergantian kamera tidak didukung di web'),
+          backgroundColor: AppTheme.warningAmber,
+        ),
+      );
+      return;
+    }
+
+    if (_cameras.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Hanya satu kamera tersedia'),
+          backgroundColor: AppTheme.warningAmber,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCameraInitialized = false;
+      _isRearCamera = !_isRearCamera;
+    });
+
+    await _saveCameraPreference();
+    await _cameraController?.dispose();
+    await _initializeCamera();
+
+    HapticFeedback.mediumImpact();
+  }
+
+  Future<void> _navigateToSettings() async {
+    final result = await Navigator.pushNamed(
+      context,
+      '/settings-screen',
+      arguments: {'isRearCamera': _isRearCamera},
+    );
+
+    // Check if camera preference changed
+    if (result is Map<String, dynamic>) {
+      final newIsRearCamera = result['isRearCamera'] as bool?;
+      if (newIsRearCamera != null && newIsRearCamera != _isRearCamera) {
+        setState(() {
+          _isRearCamera = newIsRearCamera;
+        });
+        await _saveCameraPreference();
+        // Reinitialize camera with new preference
+        await _cameraController?.dispose();
+        setState(() {
+          _isCameraInitialized = false;
+        });
+        await _initializeCamera();
+      }
+    }
   }
 
   @override
@@ -406,6 +487,7 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
                 onCustomizationTap: _toggleCustomizationSheet,
                 onResetAvatar: _resetAvatar,
                 onSettingsTap: _navigateToSettings,
+                onSwitchCamera: _switchCamera,
               ),
 
             // Avatar customization sheet
