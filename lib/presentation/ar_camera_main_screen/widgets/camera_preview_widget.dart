@@ -9,12 +9,16 @@ class CameraPreviewWidget extends StatelessWidget {
   final CameraController? cameraController;
   final bool isPersonDetected;
   final VoidCallback? onTap;
+  final String? accessoryId; // e.g., 'hat', 'earrings', or null
+  final String? accessoryAsset; // local asset path for overlay
 
   const CameraPreviewWidget({
     Key? key,
     required this.cameraController,
     required this.isPersonDetected,
     this.onTap,
+    this.accessoryId,
+    this.accessoryAsset,
   }) : super(key: key);
 
   @override
@@ -35,6 +39,68 @@ class CameraPreviewWidget extends StatelessWidget {
                       child: CameraPreview(cameraController!),
                     ),
                   ),
+                  // Simple AR accessory overlay using local assets
+                  if (isPersonDetected && accessoryAsset != null)
+                    Positioned.fill(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final w = constraints.maxWidth;
+                          final h = constraints.maxHeight;
+
+                          // Sizes are proportional to screen size for demo purposes
+                          if (accessoryId == 'hat') {
+                            final hatWidth = w * 0.45;
+                            return Stack(
+                              children: [
+                                // Hat near top-center
+                                Positioned(
+                                  top: h * 0.10,
+                                  left: (w - hatWidth) / 2,
+                                  width: hatWidth,
+                                  child: IgnorePointer(
+                                    child: Image.asset(
+                                      accessoryAsset!,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else if (accessoryId == 'earrings') {
+                            final earringWidth = w * 0.10;
+                            return Stack(
+                              children: [
+                                // Left earring near head-left
+                                Positioned(
+                                  top: h * 0.22,
+                                  left: w * 0.32,
+                                  width: earringWidth,
+                                  child: IgnorePointer(
+                                    child: Image.asset(
+                                      accessoryAsset!,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                                // Right earring near head-right (mirrored)
+                                Positioned(
+                                  top: h * 0.22,
+                                  right: w * 0.32,
+                                  width: earringWidth,
+                                  child: IgnorePointer(
+                                    child: Image.asset(
+                                      accessoryAsset!,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
                   // AR overlay indicator
                   if (isPersonDetected)
                     Positioned.fill(

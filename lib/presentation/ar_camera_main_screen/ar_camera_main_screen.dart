@@ -40,6 +40,10 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
   bool _showCustomizationSheet = false;
   bool _showVideoPlayer = false;
 
+  // Selected accessory for AR overlay
+  String? _selectedAccessoryId; // 'hat', 'earrings', etc.
+  String? _selectedAccessoryAsset; // local asset path
+
   // Animation controllers
   late AnimationController _modeTransitionController;
   late Animation<double> _modeTransitionAnimation;
@@ -318,6 +322,20 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
   void _onAccessoryChanged(String accessory) {
     // Handle accessory change
     debugPrint('Accessory changed to: $accessory');
+    setState(() {
+      _selectedAccessoryId = accessory;
+      // Map accessory ids to local asset paths
+      switch (accessory) {
+        case 'hat':
+          _selectedAccessoryAsset = 'assets/images/topi/0002.png';
+          break;
+        case 'earrings':
+          _selectedAccessoryAsset = 'assets/images/anting/anting0001.png';
+          break;
+        default:
+          _selectedAccessoryAsset = null;
+      }
+    });
     HapticFeedback.selectionClick();
   }
 
@@ -392,6 +410,8 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
               CameraPreviewWidget(
                 cameraController: _cameraController,
                 isPersonDetected: _isPersonDetected && _isArMode,
+                accessoryId: _selectedAccessoryId,
+                accessoryAsset: _selectedAccessoryAsset,
                 onTap: () {
                   if (_showCustomizationSheet) {
                     _toggleCustomizationSheet();

@@ -79,6 +79,12 @@ class _AvatarCustomizationSheetState extends State<AvatarCustomizationSheet>
       "description": "Topi baseball casual"
     },
     {
+      "id": "earrings",
+      "name": "Anting",
+      "icon": "diamond",
+      "description": "Anting sampel untuk pengujian"
+    },
+    {
       "id": "headphones",
       "name": "Headphone",
       "icon": "headphones",
