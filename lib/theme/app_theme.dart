@@ -91,7 +91,7 @@ class AppTheme {
     ),
 
     // Card theme for elevated components with subtle layering
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: surfaceNearBlack,
       elevation: 4,
       shadowColor: shadowColor,
@@ -286,17 +286,19 @@ class AppTheme {
     ),
 
     // Tab bar theme for video navigation
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: accentCyan,
       unselectedLabelColor: textSecondary,
       indicatorColor: accentCyan,
       indicatorSize: TabBarIndicatorSize.tab,
-      labelStyle: GoogleFonts.inter(
+      labelStyle: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
       ),
-      unselectedLabelStyle: GoogleFonts.inter(
+      unselectedLabelStyle: TextStyle(
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.1,
@@ -353,7 +355,7 @@ class AppTheme {
     ),
 
     // Dialog theme for permissions and settings
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: surfaceElevated,
       elevation: 8,
       shape: RoundedRectangleBorder(
