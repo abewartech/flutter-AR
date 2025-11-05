@@ -40,12 +40,77 @@ class CameraPreviewWidget extends StatelessWidget {
                     ),
                   ),
                   // Simple AR accessory overlay using local assets
-                  if (isPersonDetected && accessoryAsset != null)
+                  if (isPersonDetected && accessoryAsset != null && accessoryId != null)
                     Positioned.fill(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final w = constraints.maxWidth;
                           final h = constraints.maxHeight;
+
+                          // Helper function to build image with error handling
+                          Widget buildAccessoryImage({
+                            required String assetPath,
+                            required double width,
+                            double? height,
+                            required double top,
+                            double? left,
+                            double? right,
+                            BoxFit fit = BoxFit.contain,
+                          }) {
+                            return Positioned(
+                              top: top,
+                              left: left,
+                              right: right,
+                              width: width,
+                              height: height,
+                              child: IgnorePointer(
+                                child: Builder(
+                                  builder: (context) {
+                                    try {
+                                      // Calculate safe cache dimensions (max 2048px to prevent memory issues)
+                                      final safeCacheWidth = width > 0 && width < 2048 
+                                          ? width.toInt() 
+                                          : null;
+                                      
+                                      int? safeCacheHeight;
+                                      if (height != null) {
+                                        final h = height;
+                                        if (h > 0 && h < 2048) {
+                                          safeCacheHeight = h.toInt();
+                                        }
+                                      }
+
+                                      return Image.asset(
+                                        assetPath,
+                                        fit: fit,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          debugPrint('Error loading accessory image ($assetPath): $error');
+                                          debugPrint('Stack trace: $stackTrace');
+                                          return const SizedBox.shrink();
+                                        },
+                                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                                          if (wasSynchronouslyLoaded) {
+                                            return child;
+                                          }
+                                          return AnimatedOpacity(
+                                            opacity: frame == null ? 0 : 1,
+                                            duration: const Duration(milliseconds: 200),
+                                            child: child,
+                                          );
+                                        },
+                                        // Prevent memory issues with large images
+                                        cacheWidth: safeCacheWidth,
+                                        cacheHeight: safeCacheHeight,
+                                      );
+                                    } catch (e) {
+                                      debugPrint('Exception loading accessory image ($assetPath): $e');
+                                      return const SizedBox.shrink();
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
+                          }
 
                           // Sizes are proportional to screen size for demo purposes
                           if (accessoryId == 'hat') {
@@ -53,16 +118,11 @@ class CameraPreviewWidget extends StatelessWidget {
                             return Stack(
                               children: [
                                 // Hat near top-center
-                                Positioned(
+                                buildAccessoryImage(
+                                  assetPath: accessoryAsset!,
+                                  width: hatWidth,
                                   top: h * 0.10,
                                   left: (w - hatWidth) / 2,
-                                  width: hatWidth,
-                                  child: IgnorePointer(
-                                    child: Image.asset(
-                                      accessoryAsset!,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
                                 ),
                               ],
                             );
@@ -71,28 +131,33 @@ class CameraPreviewWidget extends StatelessWidget {
                             return Stack(
                               children: [
                                 // Left earring near head-left
-                                Positioned(
+                                buildAccessoryImage(
+                                  assetPath: accessoryAsset!,
+                                  width: earringWidth,
                                   top: h * 0.22,
                                   left: w * 0.32,
-                                  width: earringWidth,
-                                  child: IgnorePointer(
-                                    child: Image.asset(
-                                      accessoryAsset!,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
                                 ),
                                 // Right earring near head-right (mirrored)
-                                Positioned(
+                                buildAccessoryImage(
+                                  assetPath: accessoryAsset!,
+                                  width: earringWidth,
                                   top: h * 0.22,
                                   right: w * 0.32,
-                                  width: earringWidth,
-                                  child: IgnorePointer(
-                                    child: Image.asset(
-                                      accessoryAsset!,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
+                                ),
+                              ],
+                            );
+                          } else if (accessoryId == 'headphones') {
+                            // Headphones positioned on top of head
+                            final headphoneWidth = w * 0.65;
+                            final headphoneHeight = h * 0.25;
+                            return Stack(
+                              children: [
+                                buildAccessoryImage(
+                                  assetPath: accessoryAsset!,
+                                  width: headphoneWidth,
+                                  height: headphoneHeight,
+                                  top: h * 0.08,
+                                  left: (w - headphoneWidth) / 2,
                                 ),
                               ],
                             );

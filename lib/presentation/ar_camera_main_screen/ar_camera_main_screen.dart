@@ -332,6 +332,9 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
         case 'earrings':
           _selectedAccessoryAsset = 'assets/images/anting/anting0001.png';
           break;
+        case 'headphones':
+          _selectedAccessoryAsset = 'assets/images/headphone/headset0001.png';
+          break;
         default:
           _selectedAccessoryAsset = null;
       }

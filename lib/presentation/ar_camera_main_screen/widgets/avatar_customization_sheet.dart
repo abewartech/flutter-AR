@@ -58,43 +58,49 @@ class _AvatarCustomizationSheetState extends State<AvatarCustomizationSheet>
     }
   ];
 
-  // Mock accessory options
+  // Mock accessory options with asset paths for Instagram-style filters
   final List<Map<String, dynamic>> _accessories = [
     {
       "id": "none",
-      "name": "Tanpa Aksesoris",
+      "name": "None",
       "icon": "block",
-      "description": "Tidak menggunakan aksesoris"
-    },
-    {
-      "id": "glasses",
-      "name": "Kacamata",
-      "icon": "visibility",
-      "description": "Kacamata hitam modern"
-    },
-    {
-      "id": "hat",
-      "name": "Topi",
-      "icon": "sports_baseball",
-      "description": "Topi baseball casual"
-    },
-    {
-      "id": "earrings",
-      "name": "Anting",
-      "icon": "diamond",
-      "description": "Anting sampel untuk pengujian"
+      "description": "Tanpa filter",
+      "asset": null,
     },
     {
       "id": "headphones",
       "name": "Headphone",
       "icon": "headphones",
-      "description": "Headphone gaming"
+      "description": "Headphone gaming",
+      "asset": "assets/images/headphone/headset0001.png",
+    },
+    {
+      "id": "hat",
+      "name": "Topi",
+      "icon": "sports_baseball",
+      "description": "Topi baseball casual",
+      "asset": "assets/images/topi/0002.png",
+    },
+    {
+      "id": "earrings",
+      "name": "Anting",
+      "icon": "diamond",
+      "description": "Anting sampel untuk pengujian",
+      "asset": "assets/images/anting/anting0001.png",
+    },
+    {
+      "id": "glasses",
+      "name": "Kacamata",
+      "icon": "visibility",
+      "description": "Kacamata hitam modern",
+      "asset": null,
     },
     {
       "id": "mask",
       "name": "Masker",
       "icon": "masks",
-      "description": "Masker wajah"
+      "description": "Masker wajah",
+      "asset": null,
     }
   ];
 
@@ -320,9 +326,9 @@ class _AvatarCustomizationSheetState extends State<AvatarCustomizationSheet>
 
                             SizedBox(height: 4.h),
 
-                            // Accessories section
+                            // Accessories section - Instagram-style filter list
                             Text(
-                              'Aksesoris',
+                              'Filters',
                               style: AppTheme.darkTheme.textTheme.titleMedium
                                   ?.copyWith(
                                 color: AppTheme.textPrimary,
@@ -331,73 +337,144 @@ class _AvatarCustomizationSheetState extends State<AvatarCustomizationSheet>
                             ),
                             SizedBox(height: 2.h),
 
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 3.w,
-                                mainAxisSpacing: 2.h,
-                                childAspectRatio: 2.5,
-                              ),
-                              itemCount: _accessories.length,
-                              itemBuilder: (context, index) {
-                                final accessory = _accessories[index];
-                                final isSelected =
-                                    _selectedAccessory == accessory["id"];
+                            // Instagram-style horizontal scrollable filter list
+                            SizedBox(
+                              height: 16.h,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: EdgeInsets.symmetric(horizontal: 2.w),
+                                itemCount: _accessories.length,
+                                separatorBuilder: (context, index) =>
+                                    SizedBox(width: 3.w),
+                                itemBuilder: (context, index) {
+                                  final accessory = _accessories[index];
+                                  final isSelected =
+                                      _selectedAccessory == accessory["id"];
+                                  final assetPath = accessory["asset"] as String?;
 
-                                return GestureDetector(
-                                  onTap: () => _selectAccessory(
-                                      accessory["id"] as String),
-                                  child: Container(
-                                    padding: EdgeInsets.all(3.w),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? AppTheme.accentCyan
-                                              .withValues(alpha: 0.2)
-                                          : AppTheme.surfaceNearBlack,
-                                      borderRadius: BorderRadius.circular(
-                                          AppTheme.radiusMedium),
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? AppTheme.accentCyan
-                                            : AppTheme.dividerColor,
-                                        width: isSelected ? 2 : 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        CustomIconWidget(
-                                          iconName: accessory["icon"] as String,
+                                  return GestureDetector(
+                                    onTap: () => _selectAccessory(
+                                        accessory["id"] as String),
+                                    child: Container(
+                                      width: 22.w,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                            AppTheme.radiusMedium),
+                                        border: Border.all(
                                           color: isSelected
                                               ? AppTheme.accentCyan
-                                              : AppTheme.textSecondary,
-                                          size: 6.w,
+                                              : AppTheme.dividerColor,
+                                          width: isSelected ? 3 : 2,
                                         ),
-                                        SizedBox(width: 3.w),
-                                        Expanded(
-                                          child: Text(
-                                            accessory["name"] as String,
-                                            style: AppTheme
-                                                .darkTheme.textTheme.bodyMedium
-                                                ?.copyWith(
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Filter preview image/icon
+                                          Expanded(
+                                            child: Container(
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: assetPath != null
+                                                    ? Colors.transparent
+                                                    : AppTheme.surfaceNearBlack,
+                                                borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(
+                                                      AppTheme.radiusMedium),
+                                                  topRight: Radius.circular(
+                                                      AppTheme.radiusMedium),
+                                                ),
+                                              ),
+                                              child: assetPath != null
+                                                  ? ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.only(
+                                                        topLeft: Radius.circular(
+                                                            AppTheme
+                                                                .radiusMedium),
+                                                        topRight: Radius.circular(
+                                                            AppTheme
+                                                                .radiusMedium),
+                                                      ),
+                                                      child: Image.asset(
+                                                        assetPath,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context,
+                                                                error,
+                                                                stackTrace) =>
+                                                            Container(
+                                                          color: AppTheme
+                                                              .surfaceNearBlack,
+                                                          child: Center(
+                                                            child:
+                                                                CustomIconWidget(
+                                                              iconName:
+                                                                  accessory[
+                                                                          "icon"]
+                                                                      as String,
+                                                              color: AppTheme
+                                                                  .textSecondary,
+                                                              size: 8.w,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : Center(
+                                                      child: CustomIconWidget(
+                                                        iconName: accessory[
+                                                                "icon"]
+                                                            as String,
+                                                        color: isSelected
+                                                            ? AppTheme
+                                                                .accentCyan
+                                                            : AppTheme
+                                                                .textSecondary,
+                                                        size: 8.w,
+                                                      ),
+                                                    ),
+                                            ),
+                                          ),
+                                          // Filter name
+                                          Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.5.h, horizontal: 2.w),
+                                            decoration: BoxDecoration(
                                               color: isSelected
                                                   ? AppTheme.accentCyan
-                                                  : AppTheme.textPrimary,
-                                              fontWeight: isSelected
-                                                  ? FontWeight.w600
-                                                  : FontWeight.w400,
+                                                      .withValues(alpha: 0.2)
+                                                  : AppTheme.surfaceNearBlack,
+                                              borderRadius: BorderRadius.only(
+                                                bottomLeft: Radius.circular(
+                                                    AppTheme.radiusMedium),
+                                                bottomRight: Radius.circular(
+                                                    AppTheme.radiusMedium),
+                                              ),
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                            child: Text(
+                                              accessory["name"] as String,
+                                              style: AppTheme
+                                                  .darkTheme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                color: isSelected
+                                                    ? AppTheme.accentCyan
+                                                    : AppTheme.textPrimary,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
 
                             SizedBox(height: 4.h),
