@@ -26,6 +26,7 @@ dependencies:
   camera: ^0.10.5+5
   permission_handler: ^11.1.0
   video_player: ^2.10.0
+  tflite_flutter: ^0.10.4
 
 dev_dependencies:
   flutter_test:    # CRITICAL: Required for Flutter project testing - DO NOT REMOVE
@@ -37,6 +38,7 @@ flutter:
   assets:
     - assets/
     - assets/images/
+    - assets/models/  # TensorFlow Lite models directory
   # CRITICAL ASSET MANAGEMENT RULES:
   # - DO NOT ADD NEW ASSET DIRECTORIES (assets/svg/, assets/icons/, etc.)
   # - ONLY USE EXISTING AND ITEMS AVAILABLE IN THE DIRECTORIES LISTED ABOVE (assets/, assets/images/)

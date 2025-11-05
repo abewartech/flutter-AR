@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../core/services/tflite_face_detection_service.dart';
 import './widgets/avatar_customization_sheet.dart';
 import './widgets/camera_preview_widget.dart';
 import './widgets/detection_status_widget.dart';
@@ -48,8 +50,12 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
   late AnimationController _modeTransitionController;
   late Animation<double> _modeTransitionAnimation;
 
-  // Mock detection timer
-  late Stream<bool> _personDetectionStream;
+  // TensorFlow Lite face detection service
+  final TfliteFaceDetectionService _tfliteService = TfliteFaceDetectionService();
+  bool _useTfliteDetection = false; // Toggle between TFLite and mock detection
+  
+  // Detection stream (can be TFLite-based or mock)
+  Stream<bool>? _personDetectionStream;
 
   @override
   void initState() {
@@ -72,8 +78,88 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
     // Load camera preference and initialize
     _loadCameraPreference();
     _initializeApp();
+    _initializeFaceDetection();
+  }
 
-    // Mock person detection stream
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _modeTransitionController.dispose();
+    _cameraController?.dispose();
+    _tfliteService.dispose();
+    super.dispose();
+  }
+
+  /// Initialize face detection service
+  Future<void> _initializeFaceDetection() async {
+    // Try to initialize TFLite service
+    final tfliteInitialized = await _tfliteService.initialize();
+    
+    if (tfliteInitialized) {
+      _useTfliteDetection = true;
+      debugPrint('TFLite face detection initialized successfully');
+      _setupTfliteDetectionStream();
+    } else {
+      _useTfliteDetection = false;
+      debugPrint('TFLite not available, using mock detection');
+      _setupMockDetectionStream();
+    }
+  }
+
+  /// Setup TFLite-based detection stream using camera frames
+  void _setupTfliteDetectionStream() {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      // Wait for camera to initialize
+      return;
+    }
+
+    // Create a stream controller for TFLite detection results
+    final controller = StreamController<bool>.broadcast();
+    _personDetectionStream = controller.stream;
+
+    // Start processing camera frames
+    _cameraController!.startImageStream((CameraImage image) async {
+      if (!mounted) return;
+
+      try {
+        final isDetected = await _tfliteService.isPersonDetected(image);
+        final primaryFace = await _tfliteService.getPrimaryFace(image);
+        
+        if (mounted) {
+          setState(() {
+            _isPersonDetected = isDetected;
+            _detectionConfidence = primaryFace != null 
+                ? (primaryFace.confidence * 100).toInt() 
+                : 0;
+            
+            if (isDetected) {
+              _noPersonDetectedDuration = 0;
+            } else {
+              _noPersonDetectedDuration++;
+            }
+          });
+
+          // Emit detection result to stream
+          controller.add(isDetected);
+
+          // Switch to video mode if no person detected for too long
+          if (!isDetected &&
+              _noPersonDetectedDuration >= _maxNoPersonDuration &&
+              _isArMode) {
+            _switchToVideoMode();
+          } else if (isDetected && !_isArMode) {
+            _switchToArMode();
+          }
+        }
+      } catch (e) {
+        debugPrint('TFLite detection error: $e');
+        controller.add(false);
+      }
+    });
+  }
+
+  /// Setup mock detection stream (fallback)
+  void _setupMockDetectionStream() {
     _personDetectionStream = Stream.periodic(
       const Duration(milliseconds: 500),
       (count) {
@@ -91,7 +177,7 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
     ).asBroadcastStream();
 
     // Listen to detection stream
-    _personDetectionStream.listen((isDetected) {
+    _personDetectionStream!.listen((isDetected) {
       if (mounted) {
         setState(() {
           _isPersonDetected = isDetected;
@@ -107,14 +193,6 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
         }
       }
     });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _modeTransitionController.dispose();
-    _cameraController?.dispose();
-    super.dispose();
   }
 
   @override
@@ -261,6 +339,11 @@ class _ArCameraMainScreenState extends State<ArCameraMainScreen>
         setState(() {
           _isCameraInitialized = true;
         });
+        
+        // Setup TFLite detection stream if camera is ready and TFLite is enabled
+        if (_useTfliteDetection && _personDetectionStream == null) {
+          _setupTfliteDetectionStream();
+        }
       }
     } catch (e) {
       debugPrint('Camera initialization error: $e');
