@@ -80,11 +80,12 @@ class CameraPreviewWidget extends StatelessWidget {
                                         }
                                       }
 
+                                      final normalizedPath = assetPath.trim();
                                       return Image.asset(
-                                        assetPath,
+                                        normalizedPath,
                                         fit: fit,
                                         errorBuilder: (context, error, stackTrace) {
-                                          debugPrint('Error loading accessory image ($assetPath): $error');
+                                          debugPrint('Error loading accessory image ($normalizedPath): $error');
                                           debugPrint('Stack trace: $stackTrace');
                                           return const SizedBox.shrink();
                                         },
