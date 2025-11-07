@@ -33,6 +33,25 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Ignore all nested build directories (Flutter/Android/iOS/macOS/windows/linux)
+**/build/
+
+# Android specific: gradle cache and generated outputs
+android/.gradle/
+android/build/
+
+# Do not track packaged artifacts
+**/*.apk
+**/*.aab
+
+# Common native libs produced by Flutter engine during build
+android/build/**/libflutter.so
+
+# BFG Repo-Cleaner artifacts
+bfg.jar
+bfg-report/
+..bfg-report/
+
 # Symbolication related
 app.*.symbols
 
